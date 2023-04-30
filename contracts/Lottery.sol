@@ -23,6 +23,7 @@ contract Lottery is VRFConsumerBase, Ownable {
     LOTTERY_STATE public lottery_state;
     uint256 public fee;
     bytes32 public keyhash;
+    event RequestedRandomness(bytes32 requestId);
 
     constructor(
         address _priceFeedAddress,
@@ -31,7 +32,7 @@ contract Lottery is VRFConsumerBase, Ownable {
         uint256 _fee,
         bytes32 _keyhash
     ) VRFConsumerBase(_vrfCoordinator, _link) {
-        usdEntryFee = 12 * (10 ** 18);
+        usdEntryFee = 50 * (10 ** 18);
         ethUsdPriceFeed = AggregatorV3Interface(_priceFeedAddress);
         lottery_state = LOTTERY_STATE.CLOSED;
         fee = _fee;
@@ -42,7 +43,7 @@ contract Lottery is VRFConsumerBase, Ownable {
         // 12$ min
         require(lottery_state == LOTTERY_STATE.OPEN);
         require(
-            msg.value >= usdEntryFee,
+            msg.value >= getEntranceFee(),
             "Not enough ether to enter the lottery"
         );
 
@@ -54,12 +55,8 @@ contract Lottery is VRFConsumerBase, Ownable {
         uint256 adjustedPrice = uint256(price) * (10 ** 10); //18 decimals
         uint256 costToEnter = (usdEntryFee * (10 ** 18)) / adjustedPrice;
         return costToEnter;
-        // 12$, 2,000$ / ETH
     }
 
-    //modifier onlyAdmin() {}
-
-    //onlyAdmin
     function startLottery() public onlyOwner {
         require(
             lottery_state == LOTTERY_STATE.CLOSED,
@@ -71,6 +68,7 @@ contract Lottery is VRFConsumerBase, Ownable {
     function endLottery() public onlyOwner {
         lottery_state = LOTTERY_STATE.CALCULATING_WINNER;
         bytes32 requestId = requestRandomness(keyhash, fee);
+        emit RequestedRandomness(requestId);
     }
 
     function fulfillRandomness(
@@ -91,5 +89,9 @@ contract Lottery is VRFConsumerBase, Ownable {
         players = new address payable[](0);
         lottery_state = LOTTERY_STATE.CLOSED;
         randomness = _randomness;
+    }
+
+    function getPlayers() public view returns (address payable[] memory) {
+        return players;
     }
 }
