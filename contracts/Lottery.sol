@@ -32,7 +32,7 @@ contract Lottery is VRFConsumerBase, Ownable {
         uint256 _fee,
         bytes32 _keyhash
     ) VRFConsumerBase(_vrfCoordinator, _link) {
-        usdEntryFee = 50 * (10 ** 18);
+        usdEntryFee = 1 * (10 ** 18);
         ethUsdPriceFeed = AggregatorV3Interface(_priceFeedAddress);
         lottery_state = LOTTERY_STATE.CLOSED;
         fee = _fee;
